@@ -58,16 +58,26 @@ export function handleSetSalePrice(event: SetSalePrice): void {
   let artwork = Artwork.load(tokenIdStr);
 
   if (artwork != null) {
-    let sale = new Sale(tokenIdStr + event.block.timestamp.toString());
-    sale.seller = artwork.owner;
-    sale.price = event.params._amount;
-    sale.timeRaised = event.block.timestamp;
-    sale.isSold = false;
+    if (artwork.currentSale != null) {
+      let sale = Sale.load(artwork.currentSale);
+      if (sale != null) {
+        sale.price = event.params._amount;
+        log.debug("handleSetSalePrice(): Set new sale price - {}, {}", [tokenIdStr, sale.price.toString()]);
+      } else {
+        log.error("handleSetSalePrice(): Current sale not found - {}", [tokenIdStr]);
+      }
+    } else {
+      let sale = new Sale(tokenIdStr + event.block.timestamp.toString());
+      sale.seller = artwork.owner;
+      sale.price = event.params._amount;
+      sale.timeRaised = event.block.timestamp;
+      sale.isSold = false;
 
-    artwork.status = (artwork.status == 'Created') ? 'OnPrimarySale' : 'OnSecondarySale';
-    artwork.currentSale = sale.id;
+      artwork.status = (artwork.status == 'Created') ? 'OnPrimarySale' : 'OnSecondarySale';
+      artwork.currentSale = sale.id;
 
-    log.debug("handleSetSalePrice(): On sale - {}, {}", [tokenIdStr, sale.price.toString()]);
+      log.debug("handleSetSalePrice(): On sale - {}, {}", [tokenIdStr, sale.price.toString()]);
+    }
   } else {
     log.error("handleSetSalePrice(): Artwork not found - {}", [tokenIdStr]);
   }

@@ -1,6 +1,70 @@
-type ExampleEntity @entity {
+type Artwork @entity {
   id: ID!
-  count: BigInt!
-  _tokenId: BigInt! # uint256
-  _uri: String! # string
+  tokenId: BigInt!
+  artist: Account!
+  owner: Account!
+  uri: String!
+
+  status: ArtworkStatus!
+  currentBid: Bid
+  currentSale: Sale
+  bids: [Bid!]
+  sales: [Sale!]
+  transfers: [Transfer!]
+
+  lastTransferPrice: BigInt
+  timeCreated: BigInt!
+  timeLastTransferred: BigInt
+  timeWithdrawn: BigInt
+}
+
+type Account @entity {
+  id: ID!
+  address: Bytes!
+
+  createdArtworks: [Artwork!] @derivedFrom(field: "artist")
+  ownedArtworks: [Artwork!] @derivedFrom(field: "owner")
+}
+
+enum ArtworkStatus {
+  Created
+  OnPrimarySale
+  Sold
+  OnSecondarySale
+}
+
+type Bid @entity {
+	id: ID!
+	bidder: Account!
+	price: BigInt!
+	timeRaised: BigInt!
+	status: BidStatus!
+	timeCancelled: BigInt
+	acceptedBy: Account
+	timeAccepted: BigInt
+	artwork: Artwork! @derivedFrom(field: "bids")
+}
+
+enum BidStatus {
+	Open
+	Accepted
+	Cancelled
+}
+
+type Sale @entity {
+	id: ID!
+	seller: Account!
+	price: BigInt!
+	timeRaised: BigInt!
+	isSold: Boolean!
+	buyer: Account
+	timeSold: BigInt
+	artwork: Artwork! @derivedFrom(field: "sales")
+}
+
+type Transfer @entity {
+	id: ID!
+	from: Account!
+	to: Account!
+	timestamp: BigInt!
 }

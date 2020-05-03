@@ -1,41 +1,56 @@
-specVersion: 0.0.1
+specVersion: 0.0.2
 schema:
   file: ./schema.graphql
 dataSources:
   - kind: ethereum/contract
-    name: Contract
+    name: SuperRareV2
     network: mainnet
     source:
       address: "0xb932a70a57673d89f4acffbe830e8ed7f75fb9e0"
-      abi: Contract
+      abi: SuperRareV2
+      startBlock: 9994123
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.2
+      apiVersion: 0.0.4
       language: wasm/assemblyscript
       entities:
         - TokenURIUpdated
-        - AddToWhitelist
-        - RemoveFromWhitelist
-        - OwnershipTransferred
         - Transfer
-        - Approval
-        - ApprovalForAll
       abis:
-        - name: Contract
-          file: ./abis/Contract.json
+        - name: SuperRareV2
+          file: ./abis/SuperRareV2.json
       eventHandlers:
         - event: TokenURIUpdated(indexed uint256,string)
           handler: handleTokenURIUpdated
-        - event: AddToWhitelist(indexed address)
-          handler: handleAddToWhitelist
-        - event: RemoveFromWhitelist(indexed address)
-          handler: handleRemoveFromWhitelist
-        - event: OwnershipTransferred(indexed address,indexed address)
-          handler: handleOwnershipTransferred
         - event: Transfer(indexed address,indexed address,indexed uint256)
           handler: handleTransfer
-        - event: Approval(indexed address,indexed address,indexed uint256)
-          handler: handleApproval
-        - event: ApprovalForAll(indexed address,indexed address,bool)
-          handler: handleApprovalForAll
+      file: ./src/mapping.ts
+  - kind: ethereum/contract
+    name: SuperRareMarketAuction
+    network: mainnet
+    source:
+      address: "0x2947F98C42597966a0ec25e92843c09ac17Fbaa7"
+      abi: SuperRareMarketAuction
+      startBlock: 9994123
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - TokenURIUpdated
+        - Transfer
+      abis:
+        - name: SuperRareMarketAuction
+          file: ./abis/SuperRareMarketAuction.json
+      eventHandlers:
+        - event: Sold(indexed address,indexed address,indexed address,uint256,uint256)
+          handler: handleSold
+        - event: SetSalePrice(indexed address,uint256,uint256)
+          handler: handleSetSalePrice
+        - event: Bid(indexed address,indexed address,uint256,uint256)
+          handler: handleBid
+        - event: AcceptBid(indexed address,indexed address,indexed address,uint256,uint256)
+          handler: handleAcceptBid
+        - event: CancelBid(indexed address,indexed address,uint256,uint256)
+          handler: handleCancelBid
       file: ./src/mapping.ts

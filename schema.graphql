@@ -28,9 +28,7 @@ type Account @entity {
 
 enum ArtworkStatus {
   Created
-  OnPrimarySale
   Sold
-  OnSecondarySale
 }
 
 type Bid @entity {

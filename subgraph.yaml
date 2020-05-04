@@ -8,13 +8,14 @@ dataSources:
     source:
       address: "0xb932a70a57673d89f4acffbe830e8ed7f75fb9e0"
       abi: SuperRareV2
-      startBlock: 9994123
+      startBlock: 9991582
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.4
       language: wasm/assemblyscript
       entities:
-        - TokenURIUpdated
+        - Artwork
+        - Account
         - Transfer
       abis:
         - name: SuperRareV2
@@ -31,14 +32,16 @@ dataSources:
     source:
       address: "0x2947F98C42597966a0ec25e92843c09ac17Fbaa7"
       abi: SuperRareMarketAuction
-      startBlock: 9994123
+      startBlock: 9991582
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.4
       language: wasm/assemblyscript
       entities:
-        - TokenURIUpdated
-        - Transfer
+        - Artwork
+        - Account
+        - Bid
+        - Sale
       abis:
         - name: SuperRareMarketAuction
           file: ./abis/SuperRareMarketAuction.json

@@ -29,6 +29,7 @@ type Account @entity {
 enum ArtworkStatus {
   Created
   Sold
+  Withdrawn
 }
 
 type Bid @entity {

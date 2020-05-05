@@ -24,6 +24,9 @@ export function handleTransfer(event: TransferEvent): void {
     artwork.artist = _loadAccount(event.params.to);
     artwork.owner = artwork.artist;
     artwork.uri = SuperRareV2.bind(event.address).tokenURI(event.params.tokenId);
+    artwork.bids = new Array<string>();
+    artwork.sales = new Array<string>();
+    artwork.transfers = new Array<string>();
     artwork.status = 'Created';
     artwork.timeCreated = event.block.timestamp;
     artwork.save();
@@ -44,15 +47,19 @@ export function handleTransfer(event: TransferEvent): void {
         transfers.push(transfer.id);
         artwork.transfers = transfers;
 
+        artwork.status = 'Sold';
         artwork.owner = _loadAccount(event.params.to);
         artwork.timeLastTransferred = transfer.timestamp;
-        artwork.save();
 
         log.debug("handleTransfer(): Artwork tranferred - {}, {}, {}", [tokenIdStr, transfer.from, transfer.to]);
       } else {
         artwork.timeWithdrawn = event.block.timestamp;
+        artwork.status = 'Withdrawn';
+
         log.debug("handleTransfer(): Artwork withdrawn - {}, {}", [tokenIdStr, artwork.timeWithdrawn.toString()]);
       }
+
+      artwork.save();
     } else {
       log.error("handleTransfer(): Artwork not found - {}", [tokenIdStr]);
     }
@@ -110,11 +117,9 @@ export function handleSold(event: Sold): void {
       log.error("handleSold(): Sale not found - {}", [artwork.currentSale]);
     }
 
-    artwork.status = 'Sold';
     artwork.currentBid = null;
     artwork.currentSale = null;
     artwork.lastTransferPrice = event.params._amount;
-    artwork.timeLastTransferred = event.block.timestamp;
     artwork.save();
 
     log.debug("handleSold(): Artwork sold - {}, {}, {}", [tokenIdStr, event.params._buyer.toHex(), artwork.lastTransferPrice.toString()]);
@@ -184,11 +189,9 @@ export function handleAcceptBid(event: AcceptBid): void {
       log.error("handleAcceptBid(): Accepted bid not found - {}", [artwork.currentBid]);
     }
 
-    //artwork.status = 'Sold';
     artwork.currentBid = null;
     artwork.currentSale = null;
     artwork.lastTransferPrice = event.params._amount;
-    artwork.timeLastTransferred = event.block.timestamp;
     artwork.save();
   } else {
     log.error("handleAcceptBid(): Artwork not found - {}", [tokenIdStr]);

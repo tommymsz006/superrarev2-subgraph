@@ -21,9 +21,9 @@ dataSources:
           file: ./abis/SuperRareV2.json
       eventHandlers:
         - event: TokenURIUpdated(indexed uint256,string)
-          handler: handleTokenURIUpdated
+          handler: handleTokenURIUpdatedV2
         - event: Transfer(indexed address,indexed address,indexed uint256)
-          handler: handleTransfer
+          handler: handleTransferV2
       file: ./src/mapping.ts
   - kind: ethereum/contract
     name: SuperRareMarketAuction
@@ -57,3 +57,39 @@ dataSources:
         - event: CancelBid(indexed address,indexed address,uint256,uint256)
           handler: handleCancelBid
       file: ./src/mapping.ts
+  - kind: ethereum/contract
+    name: SupeRare
+    network: mainnet
+    source:
+      address: "0x41A322b28D0fF354040e2CbC676F0320d8c8850d"
+      abi: SupeRare
+      startBlock: 5364090
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Bid
+        - AcceptBid
+        - CancelBid
+        - Sold
+        - SalePriceSet
+        - Transfer
+      abis:
+        - name: SupeRare
+          file: ./abis/SupeRare.json
+      eventHandlers:
+        - event: Bid(indexed address,indexed uint256,indexed uint256)
+          handler: handleBidV1
+        - event: AcceptBid(indexed address,indexed address,uint256,indexed uint256)
+          handler: handleAcceptBidV1
+        - event: CancelBid(indexed address,indexed uint256,indexed uint256)
+          handler: handleCancelBidV1
+        - event: Sold(indexed address,indexed address,uint256,indexed uint256)
+          handler: handleSoldV1
+        - event: SalePriceSet(indexed uint256,indexed uint256)
+          handler: handleSalePriceSetV1
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleTransferV1
+      file: ./src/mapping.ts
+

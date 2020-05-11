@@ -1,9 +1,3 @@
-type Market @entity {
-  id: ID!
-  primaryIncomeFraction: BigInt!
-  royaltyFee: BigInt!
-}
-
 type Artwork @entity {
   id: ID!
   tokenId: BigInt!

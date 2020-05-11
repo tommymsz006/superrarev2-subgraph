@@ -58,17 +58,6 @@ dataSources:
           handler: handleAcceptBid
         - event: CancelBid(indexed address,indexed address,uint256,uint256)
           handler: handleCancelBid
-      # call handlers introduce significant initial processing time, hence it's not used at the moment
-      #callHandlers:
-      #  - function: setPrimarySaleFee(uint256)
-      #    handler: handleSetPrimarySaleFee
-      #  - function: setRoyaltyFee(uint256)
-      #    handler: handleSetRoyaltyFee
-      # block handlers for all also take initial processing time a lot, and filter by call does not work for this contract as tried
-      #blockHandlers:
-      #  - handler: handleBlockInMarketAuction
-      #  - filter:
-      #    - kind: call
       file: ./src/mapping.ts
   - kind: ethereum/contract
     name: SupeRare

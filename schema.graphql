@@ -1,3 +1,9 @@
+type Market @entity {
+  id: ID!
+  primaryIncomeFraction: BigInt!
+  royaltyFee: BigInt!
+}
+
 type Artwork @entity {
   id: ID!
   tokenId: BigInt!
@@ -12,6 +18,7 @@ type Artwork @entity {
   sales: [Sale!]
   transfers: [Transfer!]
 
+  firstTransferPrice: BigInt
   lastTransferPrice: BigInt
   timeCreated: BigInt!
   timeLastTransferred: BigInt
@@ -21,6 +28,8 @@ type Artwork @entity {
 type Account @entity {
   id: ID!
   address: Bytes!
+  totalPrimaryIncome: BigInt!
+  totalRoyalty: BigInt!
 
   createdArtworks: [Artwork!] @derivedFrom(field: "artist")
   ownedArtworks: [Artwork!] @derivedFrom(field: "owner")

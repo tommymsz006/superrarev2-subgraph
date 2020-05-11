@@ -1,10 +1,15 @@
-import { Address, log, BigInt, Bytes } from '@graphprotocol/graph-ts';
+import { Address, log, BigInt, Bytes, ethereum } from '@graphprotocol/graph-ts';
 import { SuperRareV2, TokenURIUpdated as TokenURIUpdatedV2Event, Transfer as TransferV2Event } from '../generated/SuperRareV2/SuperRareV2';
-import { SetSalePrice as SetSalePriceEvent, Bid as BidEvent, CancelBid as CancelBidEvent, AcceptBid as AcceptBidEvent, Sold as SoldEvent } from '../generated/SuperRareMarketAuction/SuperRareMarketAuction';
+import { SetSalePrice as SetSalePriceEvent, Bid as BidEvent, CancelBid as CancelBidEvent, AcceptBid as AcceptBidEvent, Sold as SoldEvent, SetPrimarySaleFeeCall, SetRoyaltyFeeCall } from '../generated/SuperRareMarketAuction/SuperRareMarketAuction';
 import { SupeRare, Transfer as TransferV1Event, SalePriceSet as SalePriceSetV1Event, Sold as SoldV1Event, Bid as BidV1Event, CancelBid as CancelBidV1Event, AcceptBid as AcceptBidV1Event } from '../generated/SupeRare/SupeRare';
-import { Artwork, Account, Bid, Sale, Transfer } from '../generated/schema';
+import { Market, Artwork, Account, Bid, Sale, Transfer } from '../generated/schema';
 
-const BIRTH_ADDRESS = '0x0000000000000000000000000000000000000000';
+const BIRTH_ADDRESS: string = '0x0000000000000000000000000000000000000000';
+const MARKET_ID: string = '0';
+const INITIAL_PRIMARY_MARKET_FRACTION = 85;
+const INITIAL_ROYALTY_FEE = 3;
+const NEW_ROYALTY_FEE = 10;
+const NEW_ROYALTY_FEE_BLOCK_NUMBER = 9781596;
 
 export function handleTokenURIUpdatedV2(event: TokenURIUpdatedV2Event): void {
   let tokenIdStr = event.params._tokenId.toString();
@@ -113,7 +118,6 @@ function _handleSetSalePrice( tokenId: BigInt,
       sale.isSold = false;
       sale.save();
 
-      //artwork.status = (artwork.status == 'Created') ? 'OnPrimarySale' : 'OnSecondarySale';
       let sales = artwork.sales;
       sales.push(sale.id);
       artwork.sales = sales;
@@ -151,6 +155,21 @@ function _handleSold( tokenId: BigInt,
       sale.save();
     } else {
       log.error("_handleSold(): Sale not found - {}", [artwork.currentSale]);
+    }
+
+    // calculate artist's royalty and primary income, as well as artwork's first transfer price
+    let artistAccount = Account.load(artwork.artist);
+    if (artistAccount != null) {
+      let market = Market.load(_loadMarket());
+      if (artwork.firstTransferPrice != null) {
+        artistAccount.totalRoyalty = artistAccount.totalRoyalty + (amount * market.royaltyFee / BigInt.fromI32(100));
+      } else {
+        artwork.firstTransferPrice = amount;
+        artistAccount.totalPrimaryIncome = artistAccount.totalPrimaryIncome + (amount * market.primaryIncomeFraction / BigInt.fromI32(100));
+      }
+      artistAccount.save();
+    } else {
+      log.error("_handleSold(): Artist not found - {}", [artwork.artist]);
     }
 
     artwork.currentBid = null;
@@ -240,9 +259,7 @@ export function handleAcceptBidV1(event: AcceptBidV1Event): void {
 function _handleAcceptBid(tokenId: BigInt,
                           seller: Address,
                           amount: BigInt,
-                          blockTimestamp: BigInt
-
-                          ): void {
+                          blockTimestamp: BigInt): void {
   let tokenIdStr = tokenId.toString();
   let artwork = Artwork.load(tokenIdStr);
 
@@ -259,12 +276,53 @@ function _handleAcceptBid(tokenId: BigInt,
       log.error("_handleAcceptBid(): Accepted bid not found - {}", [artwork.currentBid]);
     }
 
+    // calculate artist's royalty and primary income, as well as artwork's first transfer price
+    let artistAccount = Account.load(artwork.artist);
+    if (artistAccount != null) {
+      let market = Market.load(_loadMarket());
+      if (artwork.firstTransferPrice != null) {
+        artistAccount.totalRoyalty = artistAccount.totalRoyalty + (amount * market.royaltyFee / BigInt.fromI32(100));
+      } else {
+        artwork.firstTransferPrice = amount;
+        artistAccount.totalPrimaryIncome = artistAccount.totalPrimaryIncome + (amount * market.primaryIncomeFraction / BigInt.fromI32(100));
+      }
+      artistAccount.save();
+    } else {
+      log.error("_handleAcceptBid(): Artist not found - {}", [artwork.artist]);
+    }
+
     artwork.currentBid = null;
     artwork.currentSale = null;
     artwork.lastTransferPrice = amount;
     artwork.save();
   } else {
     log.error("_handleAcceptBid(): Artwork not found - {}", [tokenIdStr]);
+  }
+}
+
+// working function, but notice that currently it's not used due to performance reason of call hanlding in the platform
+export function handleSetPrimarySaleFee(call: SetPrimarySaleFeeCall): void {
+  let market = Market.load(_loadMarket());
+  market.primaryIncomeFraction = BigInt.fromI32(100) - call.inputs._percentage;
+  market.save();
+  log.debug("handleSetPrimarySaleFee(): Primary income fraction updated - {}", [market.primaryIncomeFraction.toString()]);
+}
+
+// working function, but notice that currently it's not used due to performance reason of call hanlding in the platform
+export function handleSetRoyaltyFee(call: SetRoyaltyFeeCall): void {
+  let market = Market.load(_loadMarket());
+  market.royaltyFee = call.inputs._percentage;
+  market.save();
+  log.debug("handleSetRoyaltyFee(): Royalty fee updated - {}", [market.royaltyFee.toString()]);
+}
+
+// working function, but notice that currently it's not used due to performance reason of block handling in the platform
+export function handleBlockInMarketAuction(block: ethereum.Block): void {
+  if (block.number == BigInt.fromI32(NEW_ROYALTY_FEE_BLOCK_NUMBER)) {
+    let market = Market.load(_loadMarket());
+    market.royaltyFee = BigInt.fromI32(NEW_ROYALTY_FEE);
+    market.save();
+    log.debug("handleBlockWithMarketAuction(): Royalty fee updated - {}", [market.royaltyFee.toString()]);
   }
 }
 
@@ -275,8 +333,23 @@ function _loadAccount(address: Address): string {
   if (account == null) {
     account = new Account(accountId);
     account.address = address;
+    account.totalPrimaryIncome = BigInt.fromI32(0);
+    account.totalRoyalty = BigInt.fromI32(0);
     account.save();
   }
 
   return accountId;
+}
+
+function _loadMarket(): string {
+  let market = Market.load(MARKET_ID);
+
+  if (market == null) {
+    market = new Market(MARKET_ID);
+    market.primaryIncomeFraction = BigInt.fromI32(INITIAL_PRIMARY_MARKET_FRACTION);
+    market.royaltyFee = BigInt.fromI32(INITIAL_ROYALTY_FEE);
+    market.save();
+  }
+
+  return MARKET_ID;
 }

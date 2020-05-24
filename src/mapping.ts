@@ -5,7 +5,7 @@ import { SupeRare, Transfer as TransferV1Event, SalePriceSet as SalePriceSetV1Ev
 import { Artwork, Account, Bid, Sale, Transfer } from '../generated/schema';
 
 const BIRTH_ADDRESS: string = '0x0000000000000000000000000000000000000000';
-const MARKET_ID: string = '0';
+//const MARKET_ID: string = '0';
 const INITIAL_PRIMARY_MARKET_FRACTION = 85;
 const INITIAL_ROYALTY_FEE = 3;
 const NEW_ROYALTY_FEE = 10;
@@ -154,6 +154,8 @@ function _handleSold( tokenId: BigInt,
       sale.buyer = _loadAccount(buyer);
       sale.timeSold = blockTimestamp;
       sale.save();
+
+      log.debug("_handleSold(): Sold: {}, {}, {}", [sale.id, buyer, tokenIdStr]);
     } else {
       log.error("_handleSold(): Sale not found - {}, {}", [artwork.currentSale, tokenIdStr]);
     }
